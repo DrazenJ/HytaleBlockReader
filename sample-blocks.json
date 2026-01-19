@@ -19,5 +19,21 @@
     { "name": "gravel" },
     { "name": "gravel" },
     { "name": "stone" }
+  ],
+  "fluids": [
+    { "name": "empty" },
+    { "name": "empty" },
+    { "name": "empty" },
+    { "name": "water" },
+    { "name": "water" },
+    { "name": "lava" },
+    { "name": "empty" },
+    { "name": "empty" },
+    { "name": "empty" },
+    { "name": "empty" },
+    { "name": "water" },
+    { "name": "water" },
+    { "name": "water" },
+    { "name": "empty" }
   ]
 }
