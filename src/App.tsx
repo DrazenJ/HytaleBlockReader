@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
 interface Block {
@@ -6,14 +6,46 @@ interface Block {
   [key: string]: any;
 }
 
+interface MaterialInfo {
+  count: number;
+  type: 'block' | 'fluid';
+}
+
 interface Materials {
-  [material: string]: number;
+  [material: string]: MaterialInfo;
 }
 
 function App() {
-  const [materials, setMaterials] = useState<Materials>({})
+  const [materials, setMaterials] = useState<Materials>(() => {
+    const saved = localStorage.getItem('materials')
+    return saved ? JSON.parse(saved) : {}
+  })
   const [fileName, setFileName] = useState<string>('')
   const [error, setError] = useState<string>('')
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem('checkedItems')
+    return saved ? JSON.parse(saved) : {}
+  })
+  const isLoadingFromStorage = useRef(true)
+
+  // Mark that loading is complete
+  useEffect(() => {
+    isLoadingFromStorage.current = false
+  }, [])
+
+  // Save materials to localStorage whenever they change
+  useEffect(() => {
+    if (Object.keys(materials).length > 0) {
+      localStorage.setItem('materials', JSON.stringify(materials))
+    }
+  }, [materials])
+
+  // Save checked items to localStorage whenever they change
+  useEffect(() => {
+    if (!isLoadingFromStorage.current) {
+      localStorage.setItem('checkedItems', JSON.stringify(checkedItems))
+    }
+  }, [checkedItems])
 
   const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -39,8 +71,11 @@ function App() {
         
         // Process blocks
         json.blocks.forEach((block: Block) => {
-          if (block.name) {
-            materialCounts[block.name] = (materialCounts[block.name] || 0) + 1
+          if (block.name && !block.name.toLowerCase().includes('empty')) {
+            if (!materialCounts[block.name]) {
+              materialCounts[block.name] = { count: 0, type: 'block' }
+            }
+            materialCounts[block.name].count += 1
           }
         })
 
@@ -48,7 +83,10 @@ function App() {
         if (json.fluids && Array.isArray(json.fluids)) {
           json.fluids.forEach((fluid: Block) => {
             if (fluid.name && !fluid.name.toLowerCase().includes('empty')) {
-              materialCounts[fluid.name] = (materialCounts[fluid.name] || 0) + 1
+              if (!materialCounts[fluid.name]) {
+                materialCounts[fluid.name] = { count: 0, type: 'fluid' }
+              }
+              materialCounts[fluid.name].count += 1
             }
           })
         }
@@ -63,14 +101,21 @@ function App() {
   }
 
   const sortedMaterials = Object.entries(materials)
-    .sort((a, b) => b[1] - a[1])
+    .sort((a, b) => b[1].count - a[1].count)
+
+  const toggleChecked = (material: string) => {
+    setCheckedItems(prev => ({
+      ...prev,
+      [material]: !prev[material]
+    }))
+  }
 
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="min-h-screen">
       {/* Header */}
       <div className="navbar bg-primary text-primary-content">
         <div className="flex-1">
-          <div className="btn btn-ghost text-xl">Hytale Block Reader</div>
+          <div className="text-xl">Hytale Block Reader</div>
         </div>
       </div>
 
@@ -117,16 +162,25 @@ function App() {
                 <table className="table table-zebra">
                   <thead>
                     <tr>
+                      <th className="w-12"></th>
                       <th>Material</th>
                       <th className="text-right">Quantity</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedMaterials.map(([material, count]) => (
+                    {sortedMaterials.map(([material, materialInfo]) => (
                       <tr key={material}>
+                        <td>
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-sm"
+                            checked={checkedItems[material] || false}
+                            onChange={() => toggleChecked(material)}
+                          />
+                        </td>
                         <td className="font-medium">{material}</td>
                         <td className="text-right">
-                          <span className="badge badge-lg badge-primary">{count}</span>
+                          <span className={`badge badge-lg ${materialInfo.type === 'block' ? 'badge-primary' : 'badge-secondary'}`}>{materialInfo.count}</span>
                         </td>
                       </tr>
                     ))}
@@ -139,7 +193,7 @@ function App() {
                 <div className="stat">
                   <div className="stat-title">Total Blocks</div>
                   <div className="stat-value text-primary">
-                    {Object.values(materials).reduce((a, b) => a + b, 0)}
+                    {Object.values(materials).reduce((a, b) => a + b.count, 0)}
                   </div>
                 </div>
                 <div className="stat">
