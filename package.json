@@ -1,12 +1,12 @@
 {
-  "name": "blockreader",
+  "name": "hytale-block-reader",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "homepage": "https://drazenj.github.io/HytaleBlockReader",
   "type": "module",
   "scripts": {
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build",
+    "deploy": "gh-pages -d dist",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
