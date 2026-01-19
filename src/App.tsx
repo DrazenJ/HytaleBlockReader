@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
+import itemLangData from './assets/item.json'
 
 interface Block {
   name: string;
@@ -26,7 +27,13 @@ function App() {
     const saved = localStorage.getItem('checkedItems')
     return saved ? JSON.parse(saved) : {}
   })
+  const [langMap, setLangMap] = useState<Record<string, string>>({})
   const isLoadingFromStorage = useRef(true)
+
+  // Load language file on mount
+  useEffect(() => {
+    setLangMap(itemLangData)
+  }, [])
 
   // Mark that loading is complete
   useEffect(() => {
@@ -110,6 +117,10 @@ function App() {
     }))
   }
 
+  const getDisplayName = (materialKey: string): string => {
+    return langMap[materialKey] || materialKey
+  }
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -178,7 +189,7 @@ function App() {
                             onChange={() => toggleChecked(material)}
                           />
                         </td>
-                        <td className="font-medium">{material}</td>
+                        <td><span className='font-medium'>{getDisplayName(material)}</span> - {material}</td>
                         <td className="text-right">
                           <span className={`badge badge-lg ${materialInfo.type === 'block' ? 'badge-primary' : 'badge-secondary'}`}>{materialInfo.count}</span>
                         </td>
