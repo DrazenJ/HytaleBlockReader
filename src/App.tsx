@@ -3,7 +3,11 @@ import './App.css'
 import itemLangData from './assets/item.json'
 
 interface Block {
+  x: number;
+  y: number;
+  z: number;
   name: string;
+  rotation?: number;
   [key: string]: any;
 }
 
@@ -16,7 +20,13 @@ interface Materials {
   [material: string]: MaterialInfo;
 }
 
+interface BlockColors {
+  [blockName: string]: string;
+}
+
 function App() {
+  const [activeTab, setActiveTab] = useState<'count' | 'layers'>('count')
+  const [selectedLayer, setSelectedLayer] = useState<number | null>(null)
   const [materials, setMaterials] = useState<Materials>(() => {
     const saved = localStorage.getItem('materials')
     return saved ? JSON.parse(saved) : {}
@@ -28,17 +38,44 @@ function App() {
     return saved ? JSON.parse(saved) : {}
   })
   const [langMap, setLangMap] = useState<Record<string, string>>({})
+  const [blocks, setBlocks] = useState<Block[]>([])
+  const [blockColors, setBlockColors] = useState<BlockColors>(() => {
+    const saved = localStorage.getItem('blockColors')
+    return saved ? JSON.parse(saved) : {}
+  })
   const isLoadingFromStorage = useRef(true)
 
-  // Load language file on mount
+  // Load language file and blocks from localStorage on mount
   useEffect(() => {
     setLangMap(itemLangData)
+    const savedBlocks = localStorage.getItem('blocks')
+    if (savedBlocks) {
+      try {
+        setBlocks(JSON.parse(savedBlocks))
+      } catch (err) {
+        console.error('Failed to load blocks from localStorage:', err)
+      }
+    }
   }, [])
 
   // Mark that loading is complete
   useEffect(() => {
     isLoadingFromStorage.current = false
   }, [])
+
+  // Save blocks to localStorage whenever they change
+  useEffect(() => {
+    if (blocks.length > 0) {
+      localStorage.setItem('blocks', JSON.stringify(blocks))
+    }
+  }, [blocks])
+
+  // Save block colors to localStorage whenever they change
+  useEffect(() => {
+    if (Object.keys(blockColors).length > 0) {
+      localStorage.setItem('blockColors', JSON.stringify(blockColors))
+    }
+  }, [blockColors])
 
   // Save materials to localStorage whenever they change
   useEffect(() => {
@@ -99,9 +136,12 @@ function App() {
         }
 
         setMaterials(materialCounts)
+        setBlocks(json.blocks)
+        ensureBlockColors(json.blocks)
       } catch (err) {
         setError(`Failed to parse JSON: ${err instanceof Error ? err.message : 'Unknown error'}`)
         setMaterials({})
+        setBlocks([])
       }
     }
     reader.readAsText(file)
@@ -121,6 +161,74 @@ function App() {
     return langMap[materialKey] || materialKey
   }
 
+  // Generate a consistent color from a block name using hash
+  const generateColorFromName = (name: string): string => {
+    let hash = 0
+    for (let i = 0; i < name.length; i++) {
+      const char = name.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash // Convert to 32bit integer
+    }
+    
+    // Convert hash to HSL color for better color distribution
+    const hue = Math.abs(hash % 360)
+    const saturation = 65 + (Math.abs(hash) % 20)
+    const lightness = 45 + (Math.abs(hash) % 15)
+    
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`
+  }
+
+  // Get or create colors for all blocks
+  const ensureBlockColors = (blocksToColor: Block[]) => {
+    const newColors = { ...blockColors }
+    let hasNewColors = false
+    
+    blocksToColor.forEach(block => {
+      if (block.name && !newColors[block.name]) {
+        newColors[block.name] = generateColorFromName(block.name)
+        hasNewColors = true
+      }
+    })
+    
+    if (hasNewColors) {
+      setBlockColors(newColors)
+    }
+  }
+
+  // Get unique layers from blocks
+  const uniqueLayers = Array.from(new Set(blocks.map(b => b.y))).sort((a, b) => a - b)
+
+  // Get blocks for selected layer
+  const blocksOnLayer = selectedLayer !== null 
+    ? blocks.filter(b => b.y === selectedLayer)
+    : []
+
+  // Calculate global grid bounds across all layers
+  const getGlobalGridBounds = () => {
+    if (blocks.length === 0) return { minX: 0, maxX: 0, minZ: 0, maxZ: 0 }
+    const xValues = blocks.map(b => b.x)
+    const zValues = blocks.map(b => b.z)
+    return {
+      minX: Math.min(...xValues),
+      maxX: Math.max(...xValues),
+      minZ: Math.min(...zValues),
+      maxZ: Math.max(...zValues)
+    }
+  }
+
+  // Create a grid mapping for quick block lookup
+  const getBlockGridMap = () => {
+    const map = new Map<string, Block>()
+    blocksOnLayer.forEach(block => {
+      map.set(`${block.x},${block.z}`, block)
+    })
+    return map
+  }
+
+  const globalBounds = getGlobalGridBounds()
+  const blockMap = getBlockGridMap()
+  const totalBlocks = blocks.length
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -132,6 +240,125 @@ function App() {
 
       {/* Main Content */}
       <div className="container mx-auto p-4">
+        {/* Tabs */}
+        <div role="tablist" className="tabs tabs-lift tabs-xl">
+          <button
+            role="tab"
+            className={`btn tab ${activeTab === 'count' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('count')}
+            aria-selected={activeTab === 'count'}
+          >
+            Block Count
+          </button>
+          <button
+            role="tab"
+            className={`btn tab ${activeTab === 'layers' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('layers')}
+            aria-selected={activeTab === 'layers'}
+          >
+            Layer Viewer
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'count' && (
+          <div role="tabpanel" className="bg-base-200 shadow-lg rounded-b-lg">
+            <div className="card">
+              <div className="card-body">
+                <h2 className="card-title mb-4">Block Count</h2>
+                <div className="stats stats-vertical lg:stats-horizontal shadow w-full">
+                  <div className="stat">
+                    <div className="stat-title">Total Blocks</div>
+                    <div className="stat-value text-primary text-4xl">{totalBlocks}</div>
+                  </div>
+                  <div className="stat">
+                    <div className="stat-title">Total Layers</div>
+                    <div className="stat-value text-secondary text-4xl">{uniqueLayers.length}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'layers' && (
+          <div role="tabpanel" className="bg-base-200 shadow-lg rounded-b-lg">
+            <div className="card">
+              <div className="card-body">
+                <h2 className="card-title mb-4">Layer Viewer</h2>
+              
+                {/* Layer Selector */}
+                <div className="form-control w-full max-w-xs mb-6">
+                  <label className="label">
+                    <span className="label-text">Select Layer (Y)</span>
+                  </label>
+                  <select
+                    value={selectedLayer ?? ''}
+                    onChange={(e) => setSelectedLayer(e.target.value ? parseInt(e.target.value) : null)}
+                    className="select select-bordered w-full max-w-xs"
+                  >
+                    <option value="">Choose a layer...</option>
+                    {uniqueLayers.map(layer => (
+                      <option key={layer} value={layer}>
+                        Layer {layer} ({blocks.filter(b => b.y === layer).length} blocks)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Grid Visualization */}
+                {selectedLayer !== null && blocksOnLayer.length > 0 ? (
+                  <div className="overflow-auto p-4 bg-base-300">
+                    <div
+                      className="inline-block relative"
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: `repeat(${globalBounds.maxZ - globalBounds.minZ + 1}, minmax(0, 1fr))`,
+                        gap: '1px',
+                        backgroundColor: '#4b5563',
+                        padding: '4px'
+                      }}
+                    >
+                      {Array.from({ length: globalBounds.maxX - globalBounds.minX + 1 }).map((_, xIdx) => {
+                        return Array.from({ length: globalBounds.maxZ - globalBounds.minZ + 1 }).map((_, zIdx) => {
+                          const x = globalBounds.minX + xIdx
+                          const z = globalBounds.minZ + zIdx
+                          const block = blockMap.get(`${x},${z}`)
+                          
+                          return (
+                            <div
+                              key={`${x},${z}`}
+                              className={`w-[64px] h-[64px] m-[1px] cursor-pointer transition-opacity hover:opacity-75 ${
+                                block ? 'border border-gray-400' : ''
+                              }`}
+                              style={{
+                                backgroundColor: block ? blockColors[block.name] || '#e5e7eb' : 'transparent'
+                              }}
+                              title={block ? `${block.name} (${x}, ${selectedLayer}, ${z})` : `Empty (${x}, ${selectedLayer}, ${z})`}
+                            />
+                          )
+                        })
+                      })}
+                    </div>
+                    <div className="mt-4 text-sm text-base-content opacity-70">
+                      <p>Layer {selectedLayer}: {blocksOnLayer.length} blocks</p>
+                      <p>Grid: {globalBounds.maxX - globalBounds.minX + 1} × {globalBounds.maxZ - globalBounds.minZ + 1}</p>
+                    </div>
+                  </div>
+                ) : selectedLayer !== null ? (
+                  <div className="alert alert-info">
+                    <span>No blocks found on layer {selectedLayer}</span>
+                  </div>
+                ) : (
+                  <div className="alert alert-warning">
+                    <span>Select a layer to view blocks</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="card bg-base-200 shadow-lg my-6">
           <div className="card-body">
             <h2 className="card-title mb-4">Import JSON File</h2>
