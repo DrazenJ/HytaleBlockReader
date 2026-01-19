@@ -425,22 +425,6 @@ function App() {
                   </tbody>
                 </table>
               </div>
-              
-              {/* Summary Stats */}
-              <div className="stats stats-vertical lg:stats-horizontal shadow mt-6 w-full">
-                <div className="stat">
-                  <div className="stat-title">Total Blocks</div>
-                  <div className="stat-value text-primary">
-                    {Object.values(materials).reduce((a, b) => a + b.count, 0)}
-                  </div>
-                </div>
-                <div className="stat">
-                  <div className="stat-title">Unique Materials</div>
-                  <div className="stat-value text-secondary">
-                    {Object.keys(materials).length}
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         )}
