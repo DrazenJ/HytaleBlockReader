@@ -7,7 +7,7 @@ A React application that imports Prefab block data from JSON files and analyzes 
 - **JSON Import**: Upload JSON files containing block and fluid data
 - **Material Analysis**: Automatically counts and aggregates blocks and fluids by name (excluding empty fluids)
 - **Sorted Results**: Materials are sorted by quantity (highest first)
-- **Beautiful UI**: Built with Tailwind CSS and DaisyUI components
+- **Beautiful UI**: Built with Tailwind CSS and daisyUI components
 - **Statistics**: Display total blocks and unique materials
 
 ## Getting Started
@@ -74,7 +74,7 @@ npm run build
 - **TypeScript** - Type safety
 - **Vite** - Build tool and dev server
 - **Tailwind CSS 4** - Utility-first CSS framework
-- **DaisyUI 5** - Component library for Tailwind CSS
+- **daisyUI 5** - Component library for Tailwind CSS
 
 ## License
 

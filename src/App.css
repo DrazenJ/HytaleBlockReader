@@ -1,3 +1,8 @@
-/* Tailwind and DaisyUI handle all styling */
+/* Tailwind and daisyUI handle all styling */
 @import "tailwindcss";
 @plugin "daisyui";
+
+body {
+    background: url('assets/hytalebg.jpg') no-repeat center center fixed;
+    background-size: cover;
+}
