@@ -4,8 +4,8 @@ A React application that imports Prefab block data from JSON files and analyzes 
 
 ## Features
 
-- **JSON Import**: Upload JSON files containing block data
-- **Material Analysis**: Automatically counts and aggregates materials by name
+- **JSON Import**: Upload JSON files containing block and fluid data
+- **Material Analysis**: Automatically counts and aggregates blocks and fluids by name (excluding empty fluids)
 - **Sorted Results**: Materials are sorted by quantity (highest first)
 - **Beautiful UI**: Built with Tailwind CSS and DaisyUI components
 - **Statistics**: Display total blocks and unique materials
@@ -35,7 +35,7 @@ npm run dev
 
 ### JSON Format
 
-Your JSON file should have a `blocks` array with objects containing a `name` property:
+Your JSON file should have `blocks` and `fluids` arrays with objects containing a `name` property:
 
 ```json
 {
@@ -44,11 +44,12 @@ Your JSON file should have a `blocks` array with objects containing a `name` pro
     { "name": "dirt" },
     { "name": "stone" },
     { "name": "oak_log" }
-  ]
+  ],
+  "fluids": [{ "name": "water" }, { "name": "empty" }, { "name": "lava" }]
 }
 ```
 
-Each block object must have a `name` field. Additional properties are ignored.
+Each block and fluid object must have a `name` field. Fluids with "empty" in the name are excluded from the count. Additional properties are ignored.
 
 ### Usage
 

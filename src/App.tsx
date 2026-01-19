@@ -36,11 +36,22 @@ function App() {
 
         // Count materials
         const materialCounts: Materials = {}
+        
+        // Process blocks
         json.blocks.forEach((block: Block) => {
           if (block.name) {
             materialCounts[block.name] = (materialCounts[block.name] || 0) + 1
           }
         })
+
+        // Process fluids if they exist
+        if (json.fluids && Array.isArray(json.fluids)) {
+          json.fluids.forEach((fluid: Block) => {
+            if (fluid.name && !fluid.name.toLowerCase().includes('empty')) {
+              materialCounts[fluid.name] = (materialCounts[fluid.name] || 0) + 1
+            }
+          })
+        }
 
         setMaterials(materialCounts)
       } catch (err) {
