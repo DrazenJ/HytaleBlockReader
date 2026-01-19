@@ -1,0 +1,23 @@
+{
+  "blocks": [
+    { "name": "stone" },
+    { "name": "stone" },
+    { "name": "stone" },
+    { "name": "dirt" },
+    { "name": "dirt" },
+    { "name": "grass" },
+    { "name": "oak_log" },
+    { "name": "oak_log" },
+    { "name": "oak_log" },
+    { "name": "oak_log" },
+    { "name": "oak_leaves" },
+    { "name": "oak_leaves" },
+    { "name": "sand" },
+    { "name": "iron_ore" },
+    { "name": "iron_ore" },
+    { "name": "coal_ore" },
+    { "name": "gravel" },
+    { "name": "gravel" },
+    { "name": "stone" }
+  ]
+}
