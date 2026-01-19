@@ -59,7 +59,7 @@ function App() {
       {/* Header */}
       <div className="navbar bg-primary text-primary-content">
         <div className="flex-1">
-          <div className="btn btn-ghost text-xl">BlockReader</div>
+          <div className="btn btn-ghost text-xl">Hytale Block Reader</div>
         </div>
       </div>
 

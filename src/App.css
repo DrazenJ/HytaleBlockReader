@@ -1,1 +1,3 @@
 /* Tailwind and DaisyUI handle all styling */
+@import "tailwindcss";
+@plugin "daisyui";
